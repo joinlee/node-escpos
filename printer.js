@@ -577,7 +577,7 @@ Printer.prototype.flush = function (callback) {
 Printer.prototype.cut = function (part, feed) {
   this.feed(feed || 3);
   this.buffer.write(_.PAPER[
-    part ? 'PAPER_PART_CUT' : 'PAPER_FULL_CUT'
+    part ? 'PAPER_CUT_B' : 'PAPER_FULL_CUT'
   ]);
   return this;
 };
