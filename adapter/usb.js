@@ -158,10 +158,16 @@ USB.prototype.close = function (callback) {
       usb = require('usb');
     }
     this.emit('close', this.device);
-    this.device.close();
-    usb.removeAllListeners('detach');
+    try {
+      this.device.close();
+      usb.removeAllListeners('detach');
+      callback && callback();
+    } catch (error) {
+      callback && callback(error);
+    }
+  } else {
+    callback && callback();
   }
-  callback && callback();
   return this;
 };
 
