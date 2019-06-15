@@ -35,7 +35,7 @@
     "get-pixels": "*",
     "serialport": "*",
     "qr-image": "*",
-    "usb": "*"
+    "usb": "1.5.0"
   },
   "devDependencies": {
     "mocha": "*"
