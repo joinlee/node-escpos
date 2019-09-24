@@ -259,18 +259,18 @@ Printer.prototype.style = function (type) {
  * @return {[Printer]} printer  [the escpos printer instance]
  */
 Printer.prototype.size = function (width, height) {
-  if (2 >= width && 2 >= height) {
-    this.buffer.write(_.TEXT_FORMAT.TXT_NORMAL);
-    if (2 == width && 2 == height) {
-      this.buffer.write(_.TEXT_FORMAT.TXT_4SQUARE);
-    } else if (1 == width && 2 == height) {
-      this.buffer.write(_.TEXT_FORMAT.TXT_2HEIGHT);
-    } else if (2 == width && 1 == height) {
-      this.buffer.write(_.TEXT_FORMAT.TXT_2WIDTH);
-    }
-  } else {
+  // if (2 >= width && 2 >= height) {
+  //   this.buffer.write(_.TEXT_FORMAT.TXT_NORMAL);
+  //   if (2 == width && 2 == height) {
+  //     this.buffer.write(_.TEXT_FORMAT.TXT_4SQUARE);
+  //   } else if (1 == width && 2 == height) {
+  //     this.buffer.write(_.TEXT_FORMAT.TXT_2HEIGHT);
+  //   } else if (2 == width && 1 == height) {
+  //     this.buffer.write(_.TEXT_FORMAT.TXT_2WIDTH);
+  //   }
+  // } else {
     this.buffer.write(_.TEXT_FORMAT.TXT_CUSTOM_SIZE(width, height));
-  }
+  // }
   return this;
 };
 
@@ -577,7 +577,7 @@ Printer.prototype.flush = function (callback) {
 Printer.prototype.cut = function (part, feed) {
   this.feed(feed || 3);
   this.buffer.write(_.PAPER[
-    part ? 'PAPER_PART_CUT' : 'PAPER_FULL_CUT'
+    part ? 'PAPER_CUT_B' : 'PAPER_FULL_CUT'
   ]);
   return this;
 };
