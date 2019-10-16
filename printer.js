@@ -24,6 +24,7 @@ function Printer(adapter, options) {
   this.adapter = adapter;
   this.buffer = new MutableBuffer();
   this.encoding = options && options.encoding || 'GB18030';
+  this.width = options && options.width || 48;
   this._model = null;
 };
 
@@ -104,6 +105,15 @@ Printer.prototype.println = function (content) {
 };
 
 /**
+ * [function print pure content with End Of Line]
+ * @param  {[String]}  content  [mandatory]
+ * @return {[Printer]} printer  [the escpos printer instance]
+ */
+Printer.prototype.newLine = function () {
+  return this.print( _.EOL);
+};
+
+/**
  * [function Print encoded alpha-numeric text with End Of Line]
  * @param  {[String]}  content  [mandatory]
  * @param  {[String]}  encoding [optional]
@@ -112,6 +122,146 @@ Printer.prototype.println = function (content) {
 Printer.prototype.text = function (content, encoding) {
   return this.print(iconv.encode(content + _.EOL, encoding || this.encoding));
 };
+
+
+/**
+ * [function Print draw line End Of Line]
+ 
+ * @return {[Printer]} printer  [the escpos printer instance]
+ */
+Printer.prototype.drawLine = function () {
+
+
+    // this.newLine();
+    for (var i = 0; i < this.width; i++) {
+      this.buffer.write(Buffer.from("-"));
+    }
+    this.newLine();
+
+    return this;
+};
+
+
+
+/**
+ * [function Print  table   with End Of Line]
+ * @param  {[List]}  data  [mandatory]
+ * @param  {[String]}  encoding [optional]
+ * @return {[Printer]} printer  [the escpos printer instance]
+ */
+Printer.prototype.table = function (data, encoding) {
+
+
+  var cellWidth = this.width / data.length;
+  var lineTxt = "";
+  
+  for (var i = 0; i < data.length; i++) {
+    
+      lineTxt += data[i].toString();
+
+    var spaces = cellWidth - data[i].toString().length;
+    for (var j = 0; j < spaces; j++) {
+      lineTxt += " ";
+
+    }
+
+  }
+  this.buffer.write(iconv.encode(lineTxt+_.EOL , encoding || this.encoding));
+
+   return this;
+
+
+
+ };
+
+
+ 
+/**
+ * [function Print  custom table  with End Of Line]
+ * @param  {[List]}  data  [mandatory]
+ * @param  {[String]}  encoding [optional]
+ * @return {[Printer]} printer  [the escpos printer instance]
+ */
+Printer.prototype.tableCustom = function (data, encoding) {
+
+    var cellWidth = this.width / data.length;
+    var secondLine = [];
+    var secondLineEnabled = false;
+    var lineStr="";
+    for (var i = 0; i < data.length; i++) {
+      var tooLong = false;
+      var obj = data[i];
+      obj.text = obj.text.toString();
+
+      if (obj.width) {
+        cellWidth = this.width * obj.width;
+      } else if (obj.cols) {
+        cellWidth = obj.cols
+      }
+
+     
+      // If text is too wide go to next line
+      if (cellWidth < obj.text.length) {
+        tooLong = true;
+        obj.originalText = obj.text;
+        obj.text = obj.text.substring(0, cellWidth - 1);
+      }
+
+      if (obj.align == "CENTER") {
+        var spaces = (cellWidth - obj.text.toString().length) / 2;
+        for (var j = 0; j < spaces; j++) {
+           lineStr +=" ";
+        }
+        if (obj.text != '') 
+          lineStr +=obj.text;
+
+        for (var j = 0; j < spaces - 1; j++) {
+          lineStr +=" ";
+        }
+
+      } else if (obj.align == "RIGHT") {
+        var spaces = cellWidth - obj.text.toString().length;
+        for (var j = 0; j < spaces; j++) {
+          lineStr +=" ";
+        }
+        if (obj.text != '') 
+        lineStr +=obj.text;
+
+      } else {
+        if (obj.text != '') 
+         lineStr +=obj.text;
+
+        var spaces = cellWidth - obj.text.toString().length;
+        for (var j = 0; j < spaces; j++) {
+          lineStr +=" ";
+        }
+
+      }
+
+     
+
+      if (tooLong) {
+        secondLineEnabled = true;
+        obj.text = obj.originalText.substring(cellWidth - 1);
+        secondLine.push(obj);
+      } else {
+        obj.text = "";
+        secondLine.push(obj);
+      }
+    }
+    this.buffer.write(iconv.encode(lineStr+_.EOL , encoding || this.encoding));
+
+    // Print the second line
+    if (secondLineEnabled) {
+      this.tableCustom(secondLine);
+    }
+    else{
+    return this;
+    }
+
+ };
+
+
 
 /**
  * [function Print encoded alpha-numeric text without End Of Line]
@@ -174,6 +324,10 @@ Printer.prototype.font = function (family) {
   this.buffer.write(_.TEXT_FORMAT[
     'TXT_FONT_' + family.toUpperCase()
   ]);
+  if (family.toUpperCase() === 'A')
+    this.width = 42;
+  else
+    this.width = 56;
   return this;
 };
 /**
@@ -577,7 +731,7 @@ Printer.prototype.flush = function (callback) {
 Printer.prototype.cut = function (part, feed) {
   this.feed(feed || 3);
   this.buffer.write(_.PAPER[
-    part ? 'PAPER_CUT_B' : 'PAPER_FULL_CUT'
+    part ? 'PAPER_PART_CUT' : 'PAPER_FULL_CUT'
   ]);
   return this;
 };
@@ -604,6 +758,16 @@ Printer.prototype.color = function (color) {
   this.buffer.write(_.COLOR[
     color === 0 || color === 1 ? color : 0
   ]);
+  return this;
+};
+
+/**
+ * [reverse colors, if your printer supports it]
+ * @param {Boolean} bool - True for reverse, false otherwise
+ * @return {[Printer]} printer  [the escpos printer instance]
+ */
+Printer.prototype.setReverseColors = function (bool) {
+  this.buffer.write(bool ? _.COLOR.REVERSE : _.COLOR.UNREVERSE);
   return this;
 };
 
